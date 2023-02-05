@@ -176,7 +176,7 @@ public class JavaBeanSerializer extends SerializeFilterable implements ObjectSer
             return;
         }
 
-        if (writeReference(serializer, object, features)) {
+        if (serializer.writeReference(object, features)) {
             return;
         }
 
@@ -565,21 +565,6 @@ public class JavaBeanSerializer extends SerializeFilterable implements ObjectSer
         serializer.write(typeName);
     }
 
-    public boolean writeReference(JSONSerializer serializer, Object object, int fieldFeatures) {
-        SerialContext context = serializer.context;
-        int mask = SerializerFeature.DisableCircularReferenceDetect.mask;
-        if (context == null || (context.features & mask) != 0 || (fieldFeatures & mask) != 0) {
-            return false;
-        }
-
-        if (serializer.references != null && serializer.references.containsKey(object)) {
-            serializer.writeReference(object);
-            return true;
-        } else {
-            return false;
-        }
-    }
-    
     protected boolean isWriteAsArray(JSONSerializer serializer) {
         return isWriteAsArray(serializer, 0);   
     }

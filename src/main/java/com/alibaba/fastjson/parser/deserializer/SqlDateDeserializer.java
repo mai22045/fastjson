@@ -6,7 +6,6 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Date;
 
-import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.parser.DefaultJSONParser;
 import com.alibaba.fastjson.parser.JSONScanner;
@@ -31,7 +30,7 @@ public class SqlDateDeserializer extends AbstractDateDeserializer implements Obj
     @SuppressWarnings("unchecked")
     protected <T> T cast(DefaultJSONParser parser, Type clazz, Object fieldName, Object val) {
         if (timestamp) {
-            return castTimestamp(parser, clazz, fieldName, val);
+            return parser.castTimestamp(clazz, fieldName, val);
         }
         
         if (val == null) {
@@ -78,71 +77,6 @@ public class SqlDateDeserializer extends AbstractDateDeserializer implements Obj
         }
 
         return (T) val;
-    }
-    
-    @SuppressWarnings("unchecked")
-    protected <T> T castTimestamp(DefaultJSONParser parser, Type clazz, Object fieldName, Object val) {
-
-        if (val == null) {
-            return null;
-        }
-
-        if (val instanceof java.util.Date) {
-            return (T) new java.sql.Timestamp(((Date) val).getTime());
-        }
-
-        if (val instanceof BigDecimal) {
-            return (T) new java.sql.Timestamp(TypeUtils.longValue((BigDecimal) val));
-        }
-
-        if (val instanceof Number) {
-            return (T) new java.sql.Timestamp(((Number) val).longValue());
-        }
-
-        if (val instanceof String) {
-            String strVal = (String) val;
-            if (strVal.length() == 0) {
-                return null;
-            }
-
-            long longVal;
-            JSONScanner dateLexer = new JSONScanner(strVal);
-            try {
-                if (strVal.length() > 19
-                        && strVal.charAt(4) == '-'
-                        && strVal.charAt(7) == '-'
-                        && strVal.charAt(10) == ' '
-                        && strVal.charAt(13) == ':'
-                        && strVal.charAt(16) == ':'
-                        && strVal.charAt(19) == '.') {
-                    String dateFomartPattern = parser.getDateFomartPattern();
-                    if (dateFomartPattern.length() != strVal.length() && dateFomartPattern == JSON.DEFFAULT_DATE_FORMAT) {
-                        return (T) java.sql.Timestamp.valueOf(strVal);
-                    }
-                }
-
-                if (dateLexer.scanISO8601DateIfMatch(false)) {
-                    longVal = dateLexer.getCalendar().getTimeInMillis();
-                } else {
-                    DateFormat dateFormat = parser.getDateFormat();
-                    try {
-                        java.util.Date date = (java.util.Date) dateFormat.parse(strVal);
-                        java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
-                        return (T) sqlDate;
-                    } catch (ParseException e) {
-                        // skip
-                    }
-
-                    longVal = Long.parseLong(strVal);
-                }
-            } finally {
-                dateLexer.close();
-            }
-
-            return (T) new java.sql.Timestamp(longVal);
-        }
-
-        throw new JSONException("parse error");
     }
 
     public int getFastMatchToken() {

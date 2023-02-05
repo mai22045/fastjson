@@ -2523,4 +2523,14 @@ public final class SerializeWriter extends Writer {
     public void reset() {
         count = 0;
     }
+
+    protected char writeClassName(Class<?> clazz, char sep) {
+        if (isEnabled(SerializerFeature.WriteClassName)) {
+            write('{');
+            writeFieldName(JSON.DEFAULT_TYPE_KEY);
+            writeString(clazz.getName());
+            sep = ',';
+        }
+        return sep;
+    }
 }

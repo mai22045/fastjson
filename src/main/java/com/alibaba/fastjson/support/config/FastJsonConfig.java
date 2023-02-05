@@ -1,6 +1,8 @@
 
 package com.alibaba.fastjson.support.config;
 
+import com.alibaba.fastjson.JSON;
+import com.alibaba.fastjson.JSONException;
 import com.alibaba.fastjson.parser.Feature;
 import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.parser.deserializer.ParseProcess;
@@ -8,7 +10,12 @@ import com.alibaba.fastjson.serializer.SerializeConfig;
 import com.alibaba.fastjson.serializer.SerializeFilter;
 import com.alibaba.fastjson.serializer.SerializerFeature;
 import com.alibaba.fastjson.util.IOUtils;
+import org.springframework.http.HttpInputMessage;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.lang.reflect.Type;
 import java.nio.charset.Charset;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -253,5 +260,23 @@ public class FastJsonConfig {
      */
     public void setParseProcess(ParseProcess parseProcess) {
         this.parseProcess = parseProcess;
+    }
+
+    public Object readType(Type type, HttpInputMessage inputMessage) {
+
+        try {
+            InputStream in = inputMessage.getBody();
+            return JSON.parseObject(in,
+                    getCharset(),
+                    type,
+                    getParserConfig(),
+                    getParseProcess(),
+                    JSON.DEFAULT_PARSER_FEATURE,
+                    getFeatures());
+        } catch (JSONException ex) {
+            throw new HttpMessageNotReadableException("JSON parse error: " + ex.getMessage(), ex);
+        } catch (IOException ex) {
+            throw new HttpMessageNotReadableException("I/O error while reading input message", ex);
+        }
     }
 }

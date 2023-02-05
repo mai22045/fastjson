@@ -41,14 +41,14 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
         if (object instanceof Point) {
             Point font = (Point) object;
             
-            sep = writeClassName(out, Point.class, sep);
+            sep = out.writeClassName(Point.class, sep);
             
             out.writeFieldValue(sep, "x", font.x);
             out.writeFieldValue(',', "y", font.y);
         } else if (object instanceof Font) {
             Font font = (Font) object;
             
-            sep = writeClassName(out, Font.class, sep);
+            sep = out.writeClassName(Font.class, sep);
             
             out.writeFieldValue(sep, "name", font.getName());
             out.writeFieldValue(',', "style", font.getStyle());
@@ -56,7 +56,7 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
         } else if (object instanceof Rectangle) {
             Rectangle rectangle = (Rectangle) object;
             
-            sep = writeClassName(out, Rectangle.class, sep);
+            sep = out.writeClassName(Rectangle.class, sep);
             
             out.writeFieldValue(sep, "x", rectangle.x);
             out.writeFieldValue(',', "y", rectangle.y);
@@ -65,7 +65,7 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
         } else if (object instanceof Color) {
             Color color = (Color) object;
             
-            sep = writeClassName(out, Color.class, sep);
+            sep = out.writeClassName(Color.class, sep);
             
             out.writeFieldValue(sep, "r", color.getRed());
             out.writeFieldValue(',', "g", color.getGreen());
@@ -79,16 +79,6 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
 
         out.write('}');
 
-    }
-
-    protected char writeClassName(SerializeWriter out, Class<?> clazz, char sep) {
-        if (out.isEnabled(SerializerFeature.WriteClassName)) {
-            out.write('{');
-            out.writeFieldName(JSON.DEFAULT_TYPE_KEY);
-            out.writeString(clazz.getName());
-            sep = ',';
-        }
-        return sep;
     }
 
     @SuppressWarnings("unchecked")
@@ -295,7 +285,7 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
                 }
 
                 if ("$ref".equals(key)) {
-                    return (Point) parseRef(parser, fieldName);
+                    return (Point) parser.parseRef(fieldName);
                 }
 
                 lexer.nextTokenWithColon(JSONToken.LITERAL_INT);
@@ -329,19 +319,6 @@ public class AwtCodec implements ObjectSerializer, ObjectDeserializer {
         }
 
         return new Point(x, y);
-    }
-
-    private Object parseRef(DefaultJSONParser parser, Object fieldName) {
-        JSONLexer lexer = parser.getLexer();
-        lexer.nextTokenWithColon(JSONToken.LITERAL_STRING);
-        String ref = lexer.stringVal();
-        parser.setContext(parser.getContext(), fieldName);
-        parser.addResolveTask(new DefaultJSONParser.ResolveTask(parser.getContext(), ref));
-        parser.popContext();
-        parser.setResolveStatus(DefaultJSONParser.NeedToResolve);
-        lexer.nextToken(JSONToken.RBRACE);
-        parser.accept(JSONToken.RBRACE);
-        return null;
     }
 
     public int getFastMatchToken() {

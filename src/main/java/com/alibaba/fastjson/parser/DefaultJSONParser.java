@@ -31,6 +31,7 @@ import java.lang.reflect.WildcardType;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DateFormat;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
@@ -1633,6 +1634,84 @@ public class DefaultJSONParser implements Closeable {
                 fieldDeser.setValue(object, refValue);
             }
         }
+    }
+
+    public Object parseRef(Object fieldName) {
+        JSONLexer lexer = getLexer();
+        lexer.nextTokenWithColon(LITERAL_STRING);
+        String ref = lexer.stringVal();
+        setContext(getContext(), fieldName);
+        addResolveTask(new ResolveTask(getContext(), ref));
+        popContext();
+        setResolveStatus(NeedToResolve);
+        lexer.nextToken(RBRACE);
+        accept(RBRACE);
+        return null;
+    }
+
+    @SuppressWarnings("unchecked")
+    public <T> T castTimestamp(Type clazz, Object fieldName, Object val) {
+
+        if (val == null) {
+            return null;
+        }
+
+        if (val instanceof Date) {
+            return (T) new java.sql.Timestamp(((Date) val).getTime());
+        }
+
+        if (val instanceof BigDecimal) {
+            return (T) new java.sql.Timestamp(TypeUtils.longValue((BigDecimal) val));
+        }
+
+        if (val instanceof Number) {
+            return (T) new java.sql.Timestamp(((Number) val).longValue());
+        }
+
+        if (val instanceof String) {
+            String strVal = (String) val;
+            if (strVal.length() == 0) {
+                return null;
+            }
+
+            long longVal;
+            JSONScanner dateLexer = new JSONScanner(strVal);
+            try {
+                if (strVal.length() > 19
+                        && strVal.charAt(4) == '-'
+                        && strVal.charAt(7) == '-'
+                        && strVal.charAt(10) == ' '
+                        && strVal.charAt(13) == ':'
+                        && strVal.charAt(16) == ':'
+                        && strVal.charAt(19) == '.') {
+                    String dateFomartPattern = getDateFomartPattern();
+                    if (dateFomartPattern.length() != strVal.length() && dateFomartPattern == JSON.DEFFAULT_DATE_FORMAT) {
+                        return (T) java.sql.Timestamp.valueOf(strVal);
+                    }
+                }
+
+                if (dateLexer.scanISO8601DateIfMatch(false)) {
+                    longVal = dateLexer.getCalendar().getTimeInMillis();
+                } else {
+                    DateFormat dateFormat = getDateFormat();
+                    try {
+                        Date date = (Date) dateFormat.parse(strVal);
+                        java.sql.Timestamp sqlDate = new java.sql.Timestamp(date.getTime());
+                        return (T) sqlDate;
+                    } catch (ParseException e) {
+                        // skip
+                    }
+
+                    longVal = Long.parseLong(strVal);
+                }
+            } finally {
+                dateLexer.close();
+            }
+
+            return (T) new java.sql.Timestamp(longVal);
+        }
+
+        throw new JSONException("parse error");
     }
 
     public static class ResolveTask {

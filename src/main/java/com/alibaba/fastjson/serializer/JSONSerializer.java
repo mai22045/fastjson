@@ -451,5 +451,19 @@ public class JSONSerializer extends SerializeFilterable {
     public void close() {
         this.out.close();
     }
-   
+
+    public boolean writeReference(Object object, int fieldFeatures) {
+        SerialContext context = this.context;
+        int mask = SerializerFeature.DisableCircularReferenceDetect.mask;
+        if (context == null || (context.features & mask) != 0 || (fieldFeatures & mask) != 0) {
+            return false;
+        }
+
+        if (references != null && references.containsKey(object)) {
+            writeReference(object);
+            return true;
+        } else {
+            return false;
+        }
+    }
 }

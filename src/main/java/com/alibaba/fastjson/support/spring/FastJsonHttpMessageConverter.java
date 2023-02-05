@@ -19,7 +19,6 @@ import org.springframework.util.StringUtils;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
@@ -234,7 +233,7 @@ public class FastJsonHttpMessageConverter extends AbstractHttpMessageConverter<O
                        Class<?> contextClass, //
                        HttpInputMessage inputMessage //
     ) throws IOException, HttpMessageNotReadableException {
-        return readType(getType(type, contextClass), inputMessage);
+        return fastJsonConfig.readType(getType(type, contextClass), inputMessage);
     }
 
     /*
@@ -253,25 +252,7 @@ public class FastJsonHttpMessageConverter extends AbstractHttpMessageConverter<O
     protected Object readInternal(Class<?> clazz, //
                                   HttpInputMessage inputMessage //
     ) throws IOException, HttpMessageNotReadableException {
-        return readType(getType(clazz, null), inputMessage);
-    }
-
-    private Object readType(Type type, HttpInputMessage inputMessage) {
-
-        try {
-            InputStream in = inputMessage.getBody();
-            return JSON.parseObject(in,
-                    fastJsonConfig.getCharset(),
-                    type,
-                    fastJsonConfig.getParserConfig(),
-                    fastJsonConfig.getParseProcess(),
-                    JSON.DEFAULT_PARSER_FEATURE,
-                    fastJsonConfig.getFeatures());
-        } catch (JSONException ex) {
-            throw new HttpMessageNotReadableException("JSON parse error: " + ex.getMessage(), ex);
-        } catch (IOException ex) {
-            throw new HttpMessageNotReadableException("I/O error while reading input message", ex);
-        }
+        return fastJsonConfig.readType(getType(clazz, null), inputMessage);
     }
 
     @Override
