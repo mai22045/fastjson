@@ -438,9 +438,8 @@ public abstract class JSON implements JSONStreamAware, JSONAware {
                                     ParseProcess processor,
                                     int featureValues,
                                     Feature... features) {
-        if (charset == null) {
-            charset = IOUtils.UTF8;
-        }
+
+        charset = charset == null ? IOUtils.UTF8 : charset;
 
         String strVal = null;
         if (charset == IOUtils.UTF8) {
@@ -1209,10 +1208,8 @@ public abstract class JSON implements JSONStreamAware, JSONAware {
             boolean ordered = false;
             if (jsonType != null) {
                 for (SerializerFeature serializerFeature : jsonType.serialzeFeatures()) {
-                    if (serializerFeature == SerializerFeature.SortField
-                            || serializerFeature == SerializerFeature.MapSortField) {
-                        ordered = true;
-                    }
+                    ordered = serializerFeature == SerializerFeature.SortField
+                            || serializerFeature == SerializerFeature.MapSortField;
                 }
             }
 

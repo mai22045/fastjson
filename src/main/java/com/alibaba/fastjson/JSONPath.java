@@ -581,8 +581,7 @@ public class JSONPath implements JSONAware {
                         Class<?> parentClass = parentObject.getClass();
                         JavaBeanDeserializer parentBeanDeserializer = getJavaBeanDeserializer(parentClass);
                         if (parentBeanDeserializer != null) {
-                            FieldDeserializer fieldDeserializer = parentBeanDeserializer.getFieldDeserializer(propertyName);
-                            fieldClass = fieldDeserializer.fieldInfo.fieldClass;
+                            fieldClass = parentBeanDeserializer.getFieldDeserializer(propertyName).fieldInfo.fieldClass;
                             beanDeserializer = getJavaBeanDeserializer(fieldClass);
                         }
                     }
@@ -1214,9 +1213,7 @@ public class JSONPath implements JSONAware {
                             isIntObj = false;
                         }
 
-                        if (isString && clazz != String.class) {
-                            isString = false;
-                        }
+                        isString = !(isString && clazz != String.class);
                     }
 
                     if (valueList.size() == 1 && valueList.get(0) == null) {
@@ -1684,14 +1681,10 @@ public class JSONPath implements JSONAware {
             }
             
             int end;
-            if (acceptBracket) {
+            if (acceptBracket || ch == '/' || ch == '.') {
                 end = pos - 1;
             } else {
-                if (ch == '/' || ch == '.') {
-                    end = pos - 1;
-                } else {
-                    end = pos;
-                }
+                end = pos;
             }
             
             String text = path.substring(start, end);
